@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>First Return: practice tax filing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e8f0e1; --grid:rgba(31,78,60,.08); --card:#ffffff; --ink:#16262e; --muted:#4a5d65;
+  --line:#c3d2bf; --soft:#f1f6ee; --primary:#1d6b52; --primary-ink:#ffffff; --primary-soft:#d8ebe2;
+  --hl:#ffe14d; --hl-ink:#3b3000; --warn:#b4351f; --warn-soft:#fbe4df; --ok:#17684b; --ok-soft:#d6efe3;
+  --focus:#1b49d8; --shadow:rgba(20,40,30,.14); --mk:#ffe14d;
+  --paper:#ffffff; --paper-ink:#111111; --paper-grey:#e2e2e2; --paper-tab:#262626; --paper-rule:#9a9a9a; --pen:#1b3fa8; --paper-hl:#fff3a6;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101a17; --grid:rgba(170,215,195,.06); --card:#17262a; --ink:#e7f0ea; --muted:#a2b8af;
+    --line:#2c4640; --soft:#1d3035; --primary:#5ccaa1; --primary-ink:#06231a; --primary-soft:#1f3d37;
+    --hl:#f2d53f; --hl-ink:#2a2200; --warn:#ff8571; --warn-soft:#3b211d; --ok:#6fd8ae; --ok-soft:#1b3a2f;
+    --focus:#8fb0ff; --shadow:rgba(0,0,0,.5); --mk:rgba(242,213,63,.38);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101a17; --grid:rgba(170,215,195,.06); --card:#17262a; --ink:#e7f0ea; --muted:#a2b8af;
+  --line:#2c4640; --soft:#1d3035; --primary:#5ccaa1; --primary-ink:#06231a; --primary-soft:#1f3d37;
+  --hl:#f2d53f; --hl-ink:#2a2200; --warn:#ff8571; --warn-soft:#3b211d; --ok:#6fd8ae; --ok-soft:#1b3a2f;
+  --focus:#8fb0ff; --shadow:rgba(0,0,0,.5); --mk:rgba(242,213,63,.38);
+}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 84px)}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0; min-height:100vh; background-color:var(--bg); color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.5;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); background:var(--card); z-index:30}
+h1,h2,h3{font-family:var(--head); line-height:1.12; margin:0; letter-spacing:-.01em}
+p{margin:0 0 .9em}
+button{font:inherit; color:inherit; cursor:pointer}
+:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+
+/* ---------- app chrome ---------- */
+.top{position:sticky; top:env(safe-area-inset-top,0px); z-index:20; background:var(--card); border-bottom:2px solid var(--ink)}
+.top-in{max-width:1040px; margin:0 auto; padding:10px 18px; display:flex; align-items:center; justify-content:space-between; gap:14px}
+.brand{display:flex; align-items:center; gap:10px; font-family:var(--head); font-weight:800; font-size:21px; letter-spacing:-.02em}
+.brand svg{width:30px; height:30px; flex:none}
+.meter{display:flex; align-items:baseline; gap:10px; padding:6px 14px; border-radius:999px; background:var(--ok-soft); color:var(--ok); border:2px solid currentColor; white-space:nowrap}
+.meter.owe{background:var(--warn-soft); color:var(--warn)}
+.meter .ml{font-size:13.5px; font-weight:700}
+.meter .mv{font-family:var(--head); font-weight:800; font-size:21px; font-variant-numeric:tabular-nums}
+.prog{max-width:1040px; margin:0 auto; padding:0 18px 10px}
+.prog .pt{display:flex; justify-content:space-between; font-size:13.5px; color:var(--muted); margin-bottom:5px}
+.prog .bar{height:8px; background:var(--line); border-radius:99px; overflow:hidden}
+.prog .bar i{display:block; height:100%; background:var(--primary); border-radius:99px; transition:width .35s ease}
+.shell{max-width:1040px; margin:0 auto; padding:22px 18px 40px; display:block}
+.rail{display:none}
+.stage{min-width:0}
+.q{background:var(--card); border:2px solid var(--ink); border-radius:16px; padding:26px 22px 8px; box-shadow:6px 6px 0 var(--shadow)}
+.q h1{font-size:clamp(28px,5.6vw,40px); margin-bottom:10px}
+.lead{font-size:18.5px; color:var(--ink); margin-bottom:20px; max-width:62ch}
+.actions{position:sticky; bottom:0; z-index:10; display:flex; gap:12px; justify-content:space-between; align-items:center; margin:22px -22px 0; padding:14px 22px calc(14px + env(safe-area-inset-bottom,0px)); background:var(--card); border-top:2px solid var(--line); border-radius:0 0 14px 14px}
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:50px; padding:10px 24px; border-radius:12px; border:2px solid var(--ink); font-weight:700; font-size:17px; background:var(--card); color:var(--ink)}
+.btn:hover{background:var(--soft)}
+.btn.primary{background:var(--primary); color:var(--primary-ink); border-color:var(--primary); box-shadow:3px 3px 0 var(--ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.primary:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink)}
+.btn.ghost{border-color:transparent; text-decoration:underline; background:transparent; color:var(--muted); min-height:44px; padding:8px 10px}
+.btn.big{min-height:58px; font-size:19px; padding:12px 30px}
+
+/* ---------- fields ---------- */
+.field{margin:0 0 20px}
+.field>label,.field legend{display:block; font-weight:700; margin-bottom:4px; padding:0}
+fieldset{border:0; padding:0; margin:0 0 20px; min-width:0}
+.hint{color:var(--muted); font-size:15.5px; margin:0 0 7px}
+.txt,.money,textarea{width:100%; border:2px solid var(--ink); border-radius:10px; background:var(--card); color:var(--ink)}
+.txt{padding:12px 14px; font:inherit; font-size:18px; min-height:50px}
+textarea{padding:12px 14px; font:inherit; font-size:17px; min-height:96px; resize:vertical}
+.money{display:flex; align-items:center}
+.money span{padding-left:14px; font-weight:700; font-size:20px; color:var(--muted)}
+.money input{flex:1; min-width:0; border:0; background:transparent; color:var(--ink); font:inherit; font-size:21px; font-variant-numeric:tabular-nums; padding:11px 14px 11px 6px; outline:0}
+.money:focus-within,.txt:focus,textarea:focus{outline:3px solid var(--focus); outline-offset:2px}
+[aria-invalid="true"]{border-color:var(--warn)}
+.err{color:var(--warn); font-weight:700; font-size:15.5px; margin:6px 0 0; min-height:0}
+.err:empty{display:none}
+.two{display:grid; gap:0 16px}
+.why{border-left:6px solid var(--hl); background:var(--soft); border-radius:0 10px 10px 0; padding:2px 14px; margin:0 0 20px}
+.why summary{cursor:pointer; font-weight:700; padding:9px 0}
+.why p{font-size:16px; margin:0 0 10px}
+.card-radio{position:relative}
+.opts{display:grid; gap:12px}
+.opt{display:block; position:relative}
+.opt input{position:absolute; opacity:0; inset:0; width:100%; height:100%; margin:0; cursor:pointer}
+.opt .face{display:block; border:2px solid var(--ink); border-radius:12px; padding:14px 16px 14px 52px; background:var(--card); position:relative; min-height:64px}
+.opt .face::before{content:""; position:absolute; left:16px; top:18px; width:22px; height:22px; border:2px solid var(--ink); border-radius:50%; background:var(--card)}
+.opt input:checked+.face{background:var(--primary-soft); border-color:var(--primary); box-shadow:inset 0 0 0 2px var(--primary)}
+.opt input:checked+.face::before{background:radial-gradient(circle,var(--primary) 0 45%,var(--card) 50%); border-color:var(--primary)}
+.opt input:focus-visible+.face{outline:3px solid var(--focus); outline-offset:2px}
+.opt b{display:block; font-size:18px}
+.opt small{display:block; color:var(--muted); font-size:15.5px; margin-top:2px}
+.seg{display:flex; gap:0; border:2px solid var(--ink); border-radius:12px; overflow:hidden; width:max-content; max-width:100%}
+.seg label{position:relative; margin:0}
+.seg input{position:absolute; opacity:0; inset:0; margin:0; cursor:pointer; width:100%; height:100%}
+.seg span{display:block; padding:11px 22px; font-weight:700; background:var(--card)}
+.seg input:checked+span{background:var(--primary); color:var(--primary-ink)}
+.seg input:focus-visible+span{outline:3px solid var(--focus); outline-offset:-3px}
+.stepper{display:flex; align-items:center; gap:14px}
+.stepper button{width:50px; height:50px; border-radius:12px; border:2px solid var(--ink); background:var(--card); font-size:26px; font-weight:700; line-height:1}
+.stepper output{font-family:var(--head); font-weight:800; font-size:34px; min-width:2ch; text-align:center}
+.live{background:var(--soft); border:2px dashed var(--line); border-radius:12px; padding:12px 16px; margin:0 0 20px}
+.live .row{display:flex; justify-content:space-between; gap:12px; padding:3px 0; font-variant-numeric:tabular-nums}
+.live .row.tot{border-top:2px solid var(--ink); margin-top:5px; padding-top:8px; font-weight:700}
+.mk{background:linear-gradient(transparent 58%,var(--mk) 58%); padding:0 2px; font-weight:700; color:var(--ink)}
+h1[tabindex="-1"]:focus{outline:none}
+.w2{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 0 20px}
+.w2 div{border:2px solid var(--ink); border-radius:8px; padding:8px 10px; background:var(--card); min-height:78px}
+.w2 small{display:block; color:var(--muted); font-size:13.5px; line-height:1.25}
+.w2 b{display:block; margin-top:6px; font-family:var(--head); font-size:15px}
+.w2 i{display:block; border-bottom:2px solid var(--ink); height:16px; margin-top:4px}
+.cmp{display:grid; gap:12px; margin-bottom:18px}
+.cmp .opt .face{padding-top:16px; padding-bottom:16px}
+.cmp .amt{font-family:var(--head); font-weight:800; font-size:30px; display:block; font-variant-numeric:tabular-nums}
+.cmp .tag{position:absolute; right:12px; top:12px; background:var(--hl); color:var(--hl-ink); font-weight:700; font-size:13.5px; padding:2px 10px; border-radius:99px}
+.cmp .bar{display:block; height:10px; background:var(--line); border-radius:99px; margin-top:8px; overflow:hidden}
+.cmp .bar i{display:block; height:100%; background:var(--primary); transition:width .4s}
+.warn{background:var(--warn-soft); border-left:6px solid var(--warn); border-radius:0 10px 10px 0; padding:10px 14px; margin:0 0 18px; font-size:16px}
+.tbl{width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; margin:0 0 14px}
+.tbl td,.tbl th{padding:7px 4px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+.tbl td:last-child,.tbl th:last-child{text-align:right; white-space:nowrap}
+.tbl tr.tot td{border-top:2px solid var(--ink); font-weight:700}
+.rv h2{font-size:21px; margin:18px 0 4px; display:flex; justify-content:space-between; align-items:center; gap:10px}
+.rv h2 button{font-size:15px; font-weight:700; border:2px solid var(--ink); background:var(--card); border-radius:8px; padding:4px 12px; font-family:var(--body)}
+.foot{max-width:1040px; margin:0 auto; padding:0 18px calc(26px + env(safe-area-inset-bottom,0px)); color:var(--muted); font-size:14.5px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center}
+
+/* welcome */
+.hero{display:grid; gap:24px}
+.hero .mini{border:2px solid var(--ink); border-radius:12px; background:var(--paper); color:var(--paper-ink); padding:10px; font-family:Arial,Helvetica,sans-serif; font-size:13px; box-shadow:5px 5px 0 var(--shadow); align-self:start}
+.hero .mini .sheet-t{font-weight:800; font-size:15px; margin:0 0 6px}
+.need{margin:0 0 18px; padding-left:1.1em}
+.need li{margin-bottom:4px}
+
+/* done */
+.result{position:relative; overflow:hidden}
+.result .big{font-family:var(--head); font-weight:800; font-size:clamp(46px,12vw,84px); line-height:1; font-variant-numeric:tabular-nums; margin:2px 0 14px}
+.result.refund .big{color:var(--ok)} .result.owe .big{color:var(--warn)}
+.stamp{position:absolute; right:14px; top:18px; border:5px double var(--warn); color:var(--warn); font-family:var(--head); font-weight:800; font-size:26px; letter-spacing:.1em; padding:4px 16px 2px; border-radius:8px; transform:rotate(-9deg); text-align:center; line-height:1.1; background:transparent; animation:slam .55s cubic-bezier(.2,1.4,.4,1) .35s both}
+.stamp small{display:block; font-size:11px; letter-spacing:.06em; font-family:var(--body); font-weight:700}
+@keyframes slam{0%{transform:rotate(-9deg) scale(2.6); opacity:0}55%{opacity:1}100%{transform:rotate(-9deg) scale(1); opacity:1}}
+.facts{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:0 0 18px}
+.facts div{background:var(--soft); border:2px solid var(--line); border-radius:12px; padding:10px 12px}
+.facts dt{font-size:14px; color:var(--muted)} .facts dd{margin:0; font-family:var(--head); font-weight:800; font-size:22px; font-variant-numeric:tabular-nums}
+.tabs{display:flex; gap:6px; flex-wrap:wrap; margin:26px 0 12px}
+.tabs button{border:2px solid var(--ink); background:var(--card); border-radius:10px 10px 0 0; padding:9px 16px; font-weight:700}
+.tabs button[aria-selected="true"]{background:var(--ink); color:var(--card)}
+.sheet-scroll{overflow-x:auto; padding-bottom:10px}
+
+/* ---------- the paper return ---------- */
+.sheet{display:none; background:var(--paper); color:var(--paper-ink); font-family:Arial,"Helvetica Neue",Helvetica,sans-serif; font-size:12px; line-height:1.3; padding:16px 18px 12px; min-width:660px; max-width:820px; margin:0 auto; border:1px solid #888; box-shadow:0 10px 28px var(--shadow)}
+.sheet.show{display:block}
+.sheet *{color:inherit}
+.sheet .pen,.sheet .v,.sheet .pen *{color:var(--pen); font-family:var(--body); font-weight:700}
+.fh{display:grid; grid-template-columns:105px 1fr 115px; border-top:4px solid #111; border-bottom:2px solid #111}
+.fh>div{padding:6px 8px}
+.fh .fl{border-right:1.5px solid #111} .fh .fr{border-left:1.5px solid #111; text-align:center}
+.fh small{display:block; font-size:9px} .fh .fl b{display:block; font-size:25px; line-height:1.05} .fh .fr b{display:block; font-size:28px; line-height:1.15}
+.fh .fc{text-align:center} .fh .fc h2{font-family:Arial,Helvetica,sans-serif; font-size:17px; font-weight:800; margin:2px 0 2px; letter-spacing:0}
+.fh .fc p{margin:0 0 2px; font-size:10px} .fh .fc .it{font-style:italic; font-size:9.5px}
+.cells{display:grid; grid-template-columns:repeat(12,1fr); margin:4px 0 8px}
+.cells .c{border:1px solid #777; padding:2px 5px 3px; min-height:34px; margin:0 -1px -1px 0}
+.cells .c small{display:block; font-size:8.5px; color:#333; margin-bottom:1px}
+.cells .s12{grid-column:span 12}.cells .s6{grid-column:span 6}.cells .s4{grid-column:span 4}.cells .s2{grid-column:span 2}.cells .s7{grid-column:span 7}.cells .s5{grid-column:span 5}
+.cells .note{font-style:italic; font-size:9.5px; color:#333}
+.cbs{display:flex; flex-wrap:wrap; gap:4px 16px; align-items:center; padding-top:2px}
+.cbs label{display:inline-flex; align-items:center; gap:5px; font-size:11px}
+.cb{display:inline-block; width:12px; height:12px; border:1.5px solid #111; position:relative; background:#fff; flex:none}
+.cb.on::after{content:"X"; position:absolute; inset:-3px 0 0 1px; font:700 14px/1 var(--body); color:var(--pen)}
+.sec{display:grid; grid-template-columns:19px 1fr; border-top:2px solid #111}
+.tabv{background:var(--paper-tab); color:#fff!important; writing-mode:vertical-rl; transform:rotate(180deg); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:9.5px; white-space:nowrap; padding:4px 0}
+.tabv{color:#fff}
+.ln{display:grid; grid-template-columns:1fr 34px minmax(112px,150px); border-bottom:1px solid var(--paper-rule); min-height:27px}
+.ln .d{display:flex; align-items:flex-end; gap:4px; padding:3px 6px 3px 7px}
+.ln .t{flex:0 1 auto}
+.ln .dots{flex:1 1 14px; min-width:10px; border-bottom:2px dotted #666; margin-bottom:5px}
+.ln .n{background:var(--paper-grey); border:1px solid #111; display:flex; align-items:center; justify-content:center; font-weight:700; margin:2px 0; font-size:12px}
+.ln .a{border:1px solid #111; margin:2px 0; display:flex; align-items:center; justify-content:space-between; padding:0 6px; background:#fff}
+.ln .a .dol{font-size:12px}
+.ln .a .v{font-size:13px; font-variant-numeric:tabular-nums; text-align:right; flex:1}
+.ln .cbs{margin-top:2px}
+.sig{display:grid; grid-template-columns:19px 5fr 2fr 2fr; border-top:2px solid #111; margin-top:6px}
+.sig .c{border:1px solid #777; padding:2px 5px; min-height:38px; font-size:8.5px; color:#333; margin:0 -1px -1px 0}
+.sf{display:flex; justify-content:space-between; border-top:1px solid #111; margin-top:10px; padding-top:4px; font-size:9.5px}
+.box{border:2px solid #111; margin-top:10px}
+.box .bh{background:#111; color:#fff!important; font-weight:700; padding:3px 8px; font-size:12px}
+.box .bb{padding:8px 10px}
+.chart3{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:6px 0 8px}
+.chart3 div{border:1px solid #111; background:var(--paper-grey); text-align:center; padding:4px}
+.chart3 b{display:block; font-size:15px}
+.rstep{display:flex; align-items:center; gap:8px; margin:6px 0}
+.rstep .lab{flex:1}
+.rstep .a{width:150px; border:1px solid #111; display:flex; justify-content:space-between; padding:2px 6px; background:#fff}
+.reason{border:1px solid #777; min-height:46px; padding:4px 6px; margin-top:4px; background:#fff}
+.bt{width:100%; border-collapse:collapse; font-size:11px; margin:4px 0 8px}
+.bt th,.bt td{border:1px solid #888; padding:3px 4px; text-align:center; font-variant-numeric:tabular-nums}
+.bt thead th{background:#262626; color:#fff!important}
+.bt thead tr+tr th{background:var(--paper-grey); color:#111!important}
+.bt .hl{background:var(--paper-hl); font-weight:700}
+.bt .sepl{border-left:2px solid #111}
+.p-intro{font-size:11px; margin:6px 0}
+
+@media (min-width:600px){
+  .two{grid-template-columns:1fr 1fr}
+  .w2{grid-template-columns:1fr 1fr}
+  .cmp{grid-template-columns:1fr 1fr}
+  .q{padding:32px 34px 8px}
+  .actions{margin:26px -34px 0; padding-left:34px; padding-right:34px}
+  .hero{grid-template-columns:1.25fr .85fr; align-items:center}
+}
+@media (min-width:980px){
+  .shell{display:grid; grid-template-columns:230px minmax(0,1fr); gap:34px; align-items:start}
+  .rail{display:block; position:sticky; top:calc(env(safe-area-inset-top,0px) + 92px)}
+  .rail ol{list-style:none; margin:0; padding:0; position:relative}
+  .rail li{position:relative}
+  .rail li::before{content:""; position:absolute; left:17px; top:36px; bottom:-12px; width:2px; background:var(--line)}
+  .rail li:last-child::before{display:none}
+  .rail button{display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:transparent; border:0; padding:8px 4px; font-weight:700; color:var(--muted); border-radius:10px}
+  .rail button:disabled{cursor:default; opacity:.8}
+  .rail .dot{width:36px; height:36px; flex:none; border-radius:50%; border:2px solid var(--line); background:var(--card); display:flex; align-items:center; justify-content:center; font-family:var(--head); font-weight:800}
+  .rail li.cur button{color:var(--ink)} .rail li.cur .dot{background:var(--hl); color:var(--hl-ink); border-color:var(--ink)}
+  .rail li.done .dot{background:var(--primary); border-color:var(--primary); color:var(--primary-ink)}
+  .rail li.done button{color:var(--ink)}
+  .prog{display:none}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important; transition:none!important}
+}
+
+@media print{
+  @page{size:letter; margin:.35in}
+  body{background:#fff!important}
+  body::before,.top,.rail,.prog,.actions,.foot,.noprint,.tabs{display:none!important}
+  .shell{display:block; padding:0; max-width:none}
+  .q{border:0; box-shadow:none; padding:0; background:transparent}
+  .sheet-scroll{overflow:visible; padding:0}
+  .sheet{display:block!important; min-width:0; max-width:none; width:100%; box-shadow:none; border:0; margin:0; break-after:page; page-break-after:always; padding:0}
+  .sheet:last-child{break-after:auto; page-break-after:auto}
+  *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="2" width="22" height="28" rx="3" fill="var(--card)" stroke="var(--ink)" stroke-width="2.4"/><path d="M9 10h12M9 15h12M9 20h6" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"/><circle cx="23" cy="23" r="7" fill="var(--hl)" stroke="var(--ink)" stroke-width="2.2"/><path d="M19.8 23l2.2 2.2 4-4.4" fill="none" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>First Return</span>
+    </div>
+    <div class="meter" id="meter" aria-live="polite" hidden><span class="ml" id="ml">Refund so far</span><span class="mv" id="mv">$0.00</span></div>
+  </div>
+  <div class="prog" id="prog" hidden></div>
+</header>
+
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Your progress"></nav>
+  <main class="stage" id="main" tabindex="-1"></main>
+</div>
+
+<footer class="foot">
+  <span>Practice tool for the classroom, built on 2025 tax rules. It is not tax advice.</span>
+  <button class="btn ghost" id="reset" type="button">Start over</button>
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+/* =====================  TAX DATA (tax year 2025)  ===================== */
+var RATES=[0.10,0.12,0.22,0.24,0.32,0.35,0.37];
+var STATUS={
+  single:{label:"Single",std:15750,thr:[0,11925,48475,103350,197300,250525,626350]},
+  mfj:{label:"Married filing jointly",std:31500,thr:[0,23850,96950,206700,394600,501050,751600]},
+  hoh:{label:"Head of household",std:23625,thr:[0,17000,64850,103350,197300,250500,626350]}
+};
+function r2(x){return Math.round((x+Number.EPSILON)*100)/100}
+Object.keys(STATUS).forEach(function(k){
+  var s=STATUS[k], base=0; s.rows=[];
+  for(var i=0;i<7;i++){ s.rows.push({over:s.thr[i],base:r2(base),rate:RATES[i]}); if(i<6) base+=RATES[i]*(s.thr[i+1]-s.thr[i]); }
+});
+var CTC=2200, CAP_LOSS=3000, SALT_CAP=40000, MED_FLOOR=0.075;
+
+function num(v){var x=parseFloat(String(v==null?"":v).replace(/[^0-9.\-]/g,""));return isFinite(x)?Math.min(Math.max(0,x),1e9):0}
+function calc(f){
+  var st=STATUS[f.status]||STATUS.single, L={}, A={}, W={};
+  L.w2=num(f.w2); L.other=num(f.other); L.div=num(f.dividends);
+  var ca=num(f.capAmt);
+  L.cap=f.capType==="loss"?-Math.min(ca,CAP_LOSS):ca;
+  L.capLost=f.capType==="loss"?Math.max(0,ca-CAP_LOSS):0;
+  L.total=r2(L.w2+L.other+L.div+L.cap);
+  L.adj=num(f.adjust);
+  L.agi=r2(L.total-L.adj);
+  L.std=st.std;
+  A.med=num(f.med); A.agi=Math.max(0,L.agi); A.floor=r2(A.agi*MED_FLOOR); A.medOk=Math.max(0,r2(A.med-A.floor));
+  A.sit=num(f.sit); A.ret=num(f.ret); A.ppt=num(f.ppt); A.taxSum=r2(A.sit+A.ret+A.ppt);
+  A.cap=A.agi>500000?Math.max(10000,r2(SALT_CAP-0.3*(A.agi-500000))):SALT_CAP;
+  A.taxOk=Math.min(A.taxSum,A.cap);
+  A.mort=num(f.mort); A.chCash=num(f.chCash); A.chNon=num(f.chNon); A.chTot=r2(A.chCash+A.chNon);
+  A.total=r2(A.medOk+A.taxOk+A.mort+A.chTot);
+  L.item=A.total;
+  L.rec=L.item>L.std?"itemized":"standard";
+  L.choice=f.choice||L.rec;
+  L.ded=L.choice==="itemized"?L.item:L.std;
+  L.taxable=Math.max(0,r2(L.agi-L.ded));
+  var idx=0; for(var i=0;i<7;i++){ if(L.taxable>st.rows[i].over) idx=i; }
+  var row=st.rows[idx];
+  W.idx=idx; W.A=L.taxable; W.B=row.over; W.C=r2(W.A-W.B); W.D=row.rate; W.E=r2(W.C*W.D); W.F=row.base; W.G=r2(W.E+W.F);
+  L.tax=W.G;
+  L.kids=Math.max(0,Math.min(10,parseInt(f.kids,10)||0));
+  L.ctc=L.kids*CTC; L.edu=num(f.edu); L.care=num(f.care); L.oth=num(f.otherAmt);
+  L.credits=r2(L.ctc+L.edu+L.care+L.oth);
+  L.totalTax=Math.max(0,r2(L.tax-L.credits));
+  L.withheld=num(f.withheld);
+  L.refund=Math.max(0,r2(L.withheld-L.totalTax));
+  L.owed=Math.max(0,r2(L.totalTax-L.withheld));
+  L.eff=L.total>0?L.totalTax/L.total:0;
+  L.top=L.taxable>0?W.D:0;
+  return {L:L,A:A,W:W,st:st};
+}
+window.__calc=calc; // handy for classroom debugging and testing
+
+/* =====================  HELPERS  ===================== */
+function $(s,r){return (r||document).querySelector(s)}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
+var nf2={minimumFractionDigits:2,maximumFractionDigits:2};
+function d2(x){return Math.abs(x).toLocaleString("en-US",nf2)}
+function usd(x){return (x<0?"-":"")+"$"+d2(x)}
+function fm(x){return x<0?"("+d2(x)+")":d2(x)}
+function pct(x){return (Math.round(x*1000)/10)+"%"}
+var RM=false; try{RM=window.matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){}
+
+/* =====================  STATE  ===================== */
+var KEY="first-return-v1";
+function defaults(){return {name:"",school:"",period:"",profession:"",status:"single",kids:0,w2:"",withheld:"",other:"",dividends:"",capType:"gain",capAmt:"",adjust:"",med:"",sit:"",ret:"",ppt:"",mort:"",chCash:"",chNon:"",edu:"",care:"",otherType:"",otherAmt:"",choice:"",reason:""}}
+var S={screen:"welcome",max:0,f:defaults()};
+var saved=null;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function load(){try{var t=localStorage.getItem(KEY);return t?JSON.parse(t):null}catch(e){return null}}
+saved=load();
+if(saved&&saved.f&&saved.f.name){ /* offered on the welcome screen */ } else saved=null;
+
+var SCREENS=[
+ {id:"welcome",stage:-1},
+ {id:"you",stage:0},{id:"status",stage:0},
+ {id:"w2",stage:1},{id:"other",stage:1},{id:"invest",stage:1},{id:"adjust",stage:1},
+ {id:"itemize",stage:2},{id:"compare",stage:2},
+ {id:"credits",stage:3},
+ {id:"review",stage:4},{id:"done",stage:4}
+];
+var STAGES=["About you","Income","Deductions","Credits","Review and file"];
+function sIdx(id){for(var i=0;i<SCREENS.length;i++) if(SCREENS[i].id===id) return i; return 0}
+
+/* =====================  FIELD BUILDERS  ===================== */
+function tf(k,label,hint,ph){
+  var id="f_"+k;
+  return '<div class="field"><label for="'+id+'">'+label+'</label>'+(hint?'<p class="hint" id="'+id+'_h">'+hint+'</p>':'')+
+   '<input class="txt" id="'+id+'" data-k="'+k+'" type="text" autocomplete="off" value="'+esc(S.f[k])+'" placeholder="'+esc(ph||"")+'"'+(hint?' aria-describedby="'+id+'_h"':'')+'>'+
+   '<p class="err" id="'+id+'_e" role="alert"></p></div>';
+}
+function mf(k,label,hint){
+  var id="f_"+k;
+  return '<div class="field"><label for="'+id+'">'+label+'</label>'+(hint?'<p class="hint" id="'+id+'_h">'+hint+'</p>':'')+
+   '<div class="money"><span aria-hidden="true">$</span><input id="'+id+'" data-k="'+k+'" data-money="1" inputmode="decimal" autocomplete="off" value="'+esc(S.f[k])+'" placeholder="0"'+(hint?' aria-describedby="'+id+'_h"':'')+'></div>'+
+   '<p class="err" id="'+id+'_e" role="alert"></p></div>';
+}
+function why(text){return '<details class="why"><summary>Why we ask</summary><p>'+text+'</p></details>'}
+function actions(backId,nextLabel){
+  return '<div class="actions">'+(backId?'<button class="btn" type="button" data-act="back">Back</button>':'<span></span>')+
+   '<button class="btn primary" type="button" data-act="next" id="nextBtn">'+(nextLabel||"Continue")+'</button></div>';
+}
+function nums(s){return s}
+
+/* =====================  SCREENS  ===================== */
+var V={};
+
+V.welcome=function(){
+  var back=saved?('<div class="live" style="border-style:solid"><p style="margin:0 0 10px"><b>Welcome back, '+esc(saved.f.name)+'.</b> We found a return you started on this device.</p>'+
+    '<button class="btn primary" type="button" data-act="resume">Continue my return</button> <button class="btn" type="button" data-act="fresh">Start a new one</button></div>'):'';
+  return '<section class="q"><div class="hero"><div>'+
+   '<h1>File your first tax return.</h1>'+
+   '<p class="lead">Pick a job, answer one question at a time, and watch your refund (or bill) change as you go. At the end you get a finished 1040-S you can print.</p>'+
+   back+
+   '<p><b>Have these ready:</b></p><ul class="need"><li>The profession you chose and its yearly salary</li><li>Any practice numbers your teacher gave you, like investments, deductions, or credits</li></ul>'+
+   '<p class="hint">Takes about 15 minutes. Your answers stay on this device. Use Start over at the bottom of the page before you leave a shared computer.</p></div>'+
+   '<div class="mini" aria-hidden="true"><p class="sheet-t">Form 1040-S</p>'+
+    ln("1","W-2 income.","",'')+ln("11","Taxable income.","",'')+ln("20","Total tax refund.","",'')+'</div></div>'+
+   (saved?'':'<div class="actions"><span></span><button class="btn primary big" type="button" data-act="start">Start my return</button></div>')+
+   '</section>';
+};
+
+V.you=function(){
+  return '<section class="q"><h1>Let’s start with you</h1><p class="lead">This goes at the top of your return.</p>'+
+   '<div class="two">'+tf("name","Your name","First and last")+tf("school","Your school","")+'</div>'+
+   '<div class="two">'+tf("period","Class period","For example: 3")+tf("profession","Profession you chose","For example: nurse, electrician, game designer")+'</div>'+
+   why("A real tax return starts with who you are. You will never type an address, phone number, or Social Security number here. Those are private and not needed for this project.")+
+   actions(false)+'</section>';
+};
+
+V.status=function(){
+  var st=S.f.status;
+  function o(v,t,d){return '<label class="opt"><input type="radio" name="status" data-k="status" value="'+v+'"'+(st===v?' checked':'')+'><span class="face"><b>'+t+'</b><small>'+d+'</small></span></label>'}
+  return '<section class="q"><h1>How will you file?</h1><p class="lead">Your filing status decides your standard deduction and which tax brackets you use.</p>'+
+   '<fieldset class="field"><legend>Filing status</legend><div class="opts">'+
+   o("single","Single","You are not married and don’t support a child.")+
+   o("mfj","Married filing jointly","You and your spouse file one return together.")+
+   o("hoh","Head of household","You are not married and pay most of the cost of raising a child or caring for another dependent.")+
+   '</div></fieldset>'+
+   '<div class="field"><label id="kidsL">How many children under 17 do you support?</label><p class="hint">Each child can earn a $2,200 tax credit later on.</p>'+
+   '<div class="stepper" role="group" aria-labelledby="kidsL"><button type="button" data-act="kids-" aria-label="One fewer child">&minus;</button><output id="kidsN" aria-live="polite">'+S.f.kids+'</output><button type="button" data-act="kids+" aria-label="One more child">+</button></div></div>'+
+   '<div class="live" id="stdLive"></div>'+
+   why("The IRS has a few filing statuses because a family of four has different costs than one person. Picking the right one can change your tax by thousands of dollars.")+
+   actions(true)+'</section>';
+};
+L_status=function(){var c=calc(S.f);var el=$("#stdLive");if(el) el.innerHTML='<div class="row"><span>Your standard deduction</span><b>'+usd(c.L.std)+'</b></div><div class="row"><span>Child Tax Credit available</span><b>'+usd(c.L.kids*CTC)+'</b></div>'};
+
+V.w2=function(){
+  return '<section class="q"><h1>Your W-2</h1><p class="lead">Your employer sends a W-2 every January. Two of its boxes go on your return.</p>'+
+   '<div class="w2" aria-hidden="true"><div><small>Box 1</small><b>Wages, tips, other pay</b><i></i></div><div><small>Box 2</small><b>Federal income tax withheld</b><i></i></div></div>'+
+   mf("w2","Box 1: your wages for the year","The yearly pay for your profession, before any taxes come out.")+
+   '<details class="why"><summary>How do I find a salary for my job?</summary><p>Look up your profession in the Occupational Outlook Handbook from the Bureau of Labor Statistics (bls.gov/ooh). Use the median pay for the year, not the hourly rate.</p></details>'+
+   mf("withheld","Box 2: federal income tax withheld","The tax your employer already sent to the government. Your teacher may give you this number.")+
+   '<p><button class="btn" type="button" data-act="estimate">Not sure? Fill in a typical amount</button></p><p class="hint" style="margin-top:-6px">That button uses about 14% of your wages, a rough rule of thumb for practice.</p>'+
+   why("Each paycheck, your employer holds back some tax for you. Withholding is a down payment. At tax time you find out if you paid too much (refund) or too little (you owe).")+
+   actions(true)+'</section>';
+};
+
+V.other=function(){
+  return '<section class="q"><h1>Any other income?</h1><p class="lead">Think tips, side jobs, bonuses, or interest from a savings account. Enter 0 if you have none.</p>'+
+   mf("other","Other income for the year","Add it all up into one number.")+
+   why("Almost all money you earn counts as income, even if nobody mails you a W-2 for it. That includes cash tips and money from a weekend side job.")+
+   actions(true)+'</section>';
+};
+
+V.invest=function(){
+  return '<section class="q"><h1>Investments</h1><p class="lead">Skip anything that doesn’t apply to you.</p>'+
+   mf("dividends","Dividends","A company’s share of its profit, paid to people who own its stock.")+
+   '<fieldset class="field"><legend>Did you sell an investment this year?</legend><p class="hint">A capital gain is money you made when you sold it for more than you paid. A capital loss is money you lost.</p>'+
+   '<div class="seg" role="radiogroup"><label><input type="radio" name="capType" data-k="capType" value="gain"'+(S.f.capType!=="loss"?' checked':'')+'><span>Gain</span></label><label><input type="radio" name="capType" data-k="capType" value="loss"'+(S.f.capType==="loss"?' checked':'')+'><span>Loss</span></label></div></fieldset>'+
+   mf("capAmt","How much was the gain or loss?","Enter the amount without a minus sign. Use the Gain or Loss buttons above.")+
+   '<div class="warn" id="capWarn" hidden></div>'+
+   why("The government taxes profit from investments. If you lost money, you can subtract some of the loss from your other income, but only up to $3,000 a year. Any extra carries over to future years.")+
+   actions(true)+'</section>';
+};
+L_invest=function(){var c=calc(S.f).L;var el=$("#capWarn");if(!el)return;if(c.capLost>0){el.hidden=false;el.textContent="Only $"+d2(CAP_LOSS)+" of your loss counts this year. The other "+usd(c.capLost)+" carries over to future years."}else el.hidden=true};
+
+V.adjust=function(){
+  return '<section class="q"><h1>Adjustments</h1><p class="lead">Adjustments are special subtractions, like student loan interest. Most students enter 0 unless their teacher says otherwise.</p>'+
+   mf("adjust","Adjustments to income","Leave it at 0 if you aren’t sure.")+
+   '<div class="live" id="agiLive" aria-live="polite"></div>'+
+   why("Your adjusted gross income, or AGI, is your total income minus adjustments. It shows up all over the tax rules. For example, medical costs only count if they are more than 7.5% of your AGI.")+
+   actions(true)+'</section>';
+};
+L_adjust=function(){var c=calc(S.f).L;var el=$("#agiLive");if(!el)return;
+  el.innerHTML='<div class="row"><span>W-2 income</span><span>'+usd(c.w2)+'</span></div><div class="row"><span>Other income</span><span>'+usd(c.other)+'</span></div><div class="row"><span>Dividends</span><span>'+usd(c.div)+'</span></div><div class="row"><span>Capital gain or (loss)</span><span>'+usd(c.cap)+'</span></div><div class="row"><span>Total income</span><b>'+usd(c.total)+'</b></div><div class="row"><span>Minus adjustments</span><span>'+usd(c.adj)+'</span></div><div class="row tot"><span>Adjusted gross income (AGI)</span><span class="mk">'+usd(c.agi)+'</span></div>'};
+
+V.itemize=function(){
+  return '<section class="q"><h1>Could itemizing beat the standard deduction?</h1><p class="lead">Add up what you paid for the things below. Leave a box blank if it doesn’t apply. Your teacher may give you these numbers.</p>'+
+   '<h2 style="font-size:20px;margin:0 0 8px">Medical and dental</h2>'+mf("med","Medical and dental bills you paid","Doctor, dentist, glasses, prescriptions.")+
+   '<h2 style="font-size:20px;margin:0 0 8px">Taxes you paid</h2><div class="two">'+mf("sit","State and local income tax","Or sales tax.")+mf("ret","Real estate tax","Property tax on a home you own.")+'</div>'+mf("ppt","Personal property tax","For example, a yearly car tax based on the car’s value.")+
+   '<h2 style="font-size:20px;margin:0 0 8px">Interest and gifts</h2>'+mf("mort","Home mortgage interest","Interest on a loan used to buy your home.")+
+   '<div class="two">'+mf("chCash","Gifts to charity by cash or check","")+mf("chNon","Gifts to charity other than cash","Donated clothes, furniture, toys.")+'</div>'+
+   '<div class="live" id="itLive" aria-live="polite"></div>'+
+   why("Itemizing means listing each deductible expense instead of taking one flat amount. It only makes sense if your list adds up to more than the standard deduction.")+
+   actions(true)+'</section>';
+};
+L_itemize=function(){var c=calc(S.f);var el=$("#itLive");if(!el)return;
+  el.innerHTML='<div class="row"><span>Your itemized total so far</span><b>'+usd(c.L.item)+'</b></div><div class="row"><span>Standard deduction for '+esc(c.st.label.toLowerCase())+'</span><b>'+usd(c.L.std)+'</b></div>'};
+
+V.compare=function(){
+  var c=calc(S.f), L=c.L, A=c.A, mx=Math.max(L.std,L.item,1);
+  function card(v,t,d,amt){
+    return '<label class="opt"><input type="radio" name="choice" data-k="choice" value="'+v+'"'+(S.f.choice===v?' checked':'')+'><span class="face"><b>'+t+'</b><span class="amt">'+usd(amt)+'</span><small>'+d+'</small><span class="bar"><i style="width:'+Math.round(amt/mx*100)+'%"></i></span></span>'+(L.rec===v&&L.std!==L.item?'<span class="tag">Bigger</span>':'')+'</label>';
+  }
+  var det='<table class="tbl"><tbody>'+
+   '<tr><td>Medical costs above 7.5% of your AGI ('+usd(A.med)+' &minus; '+usd(A.floor)+')</td><td>'+usd(A.medOk)+'</td></tr>'+
+   '<tr><td>State and local taxes'+(A.taxSum>A.cap?' (capped at '+usd(A.cap)+')':'')+'</td><td>'+usd(A.taxOk)+'</td></tr>'+
+   '<tr><td>Home mortgage interest</td><td>'+usd(A.mort)+'</td></tr>'+
+   '<tr><td>Gifts to charity</td><td>'+usd(A.chTot)+'</td></tr>'+
+   '<tr class="tot"><td>Total itemized deductions</td><td>'+usd(A.total)+'</td></tr></tbody></table>';
+  return '<section class="q"><h1>Standard or itemized?</h1><p class="lead">You subtract one of these from your income before tax is figured. A bigger deduction means less taxable income, so you usually want the bigger one.</p>'+
+   '<fieldset class="field"><legend class="sr">Choose a deduction</legend><div class="cmp">'+
+    card("standard","Standard deduction","A flat amount for your filing status. No receipts needed.",L.std)+
+    card("itemized","Itemized deductions","The total of what you actually paid for medical care, taxes, interest, and charity.",L.item)+
+   '</div><p class="err" id="f_choice_e" role="alert"></p></fieldset>'+
+   '<div class="warn" id="cmpWarn" hidden></div>'+
+   '<details class="why"><summary>See how we figured your itemized total</summary>'+det+'</details>'+
+   '<div class="field"><label for="f_reason">In a sentence or two, why was this the better choice for you?</label><textarea id="f_reason" data-k="reason" placeholder="Optional, but it goes on your Schedule A-S">'+esc(S.f.reason)+'</textarea></div>'+
+   actions(true)+'</section>';
+};
+L_compare=function(){var c=calc(S.f).L;var el=$("#cmpWarn");if(!el)return;
+  var ch=S.f.choice;
+  if(ch&&ch!==c.rec&&c.std!==c.item){var diff=Math.abs(c.std-c.item);el.hidden=false;el.textContent="Heads up: the other choice is "+usd(diff)+" bigger. Taking the bigger deduction would lower your taxable income by that much.";}
+  else el.hidden=true};
+
+V.credits=function(){
+  return '<section class="q"><h1>Credits</h1><p class="lead">A credit takes money straight off your tax bill, dollar for dollar. That’s stronger than a deduction, which only lowers the income you’re taxed on.</p>'+
+   '<div class="live" id="ctcLive"></div>'+
+   mf("edu","Education credit","College or job-training costs. Your teacher will tell you the amount.")+
+   mf("care","Child and dependent care credit","Daycare or after-school care so you can work. Your teacher will tell you the amount.")+
+   '<div class="two">'+tf("otherType","Another credit? What kind?","Optional")+mf("otherAmt","Amount of that credit","")+'</div>'+
+   '<p class="hint">In this practice return, credits can lower your tax to $0 but not below.</p>'+
+   why("Lawmakers use credits to help with costs they want to encourage, like raising kids or going to college. The Child Tax Credit is $2,200 for each child under 17.")+
+   actions(true)+'</section>';
+};
+L_credits=function(){var c=calc(S.f).L;var el=$("#ctcLive");if(!el)return;
+  el.innerHTML='<div class="row"><span>Child Tax Credit: '+c.kids+(c.kids===1?' child':' children')+' &times; $2,200</span><b>'+usd(c.ctc)+'</b></div>'};
+
+function rvRow(a,b,bold){return '<tr'+(bold?' class="tot"':'')+'><td>'+a+'</td><td>'+b+'</td></tr>'}
+V.review=function(){
+  var c=calc(S.f), L=c.L;
+  function h(t,to){return '<h2>'+t+'<button type="button" data-act="goto" data-to="'+to+'">Change</button></h2>'}
+  return '<section class="q rv"><h1>Check your numbers</h1><p class="lead">Look everything over. Use Change to fix anything that looks off.</p>'+
+   h("About you","you")+'<table class="tbl"><tbody>'+rvRow("Name",esc(S.f.name))+rvRow("School and period",esc(S.f.school)+", period "+esc(S.f.period))+rvRow("Profession",esc(S.f.profession))+rvRow("Filing status",esc(c.st.label)+(L.kids?", "+L.kids+(L.kids===1?" child":" children"):""))+'</tbody></table>'+
+   h("Income","w2")+'<table class="tbl"><tbody>'+rvRow("W-2 income",usd(L.w2))+rvRow("Other income",usd(L.other))+rvRow("Dividends",usd(L.div))+rvRow("Capital gain or (loss)",usd(L.cap))+rvRow("Adjustments",usd(L.adj))+rvRow("Adjusted gross income",usd(L.agi),true)+'</tbody></table>'+
+   h("Deductions","itemize")+'<table class="tbl"><tbody>'+rvRow("Standard deduction",usd(L.std))+rvRow("Itemized deductions",usd(L.item))+rvRow("Deduction you chose",(L.choice==="itemized"?"Itemized ":"Standard ")+usd(L.ded))+rvRow("Taxable income",usd(L.taxable),true)+'</tbody></table>'+
+   h("Tax and credits","credits")+'<table class="tbl"><tbody>'+rvRow("Tax from the bracket worksheet",usd(L.tax))+rvRow("Child Tax Credit",usd(L.ctc))+rvRow("Education credit",usd(L.edu))+rvRow("Child and dependent care credit",usd(L.care))+rvRow("Other credit"+(S.f.otherType?" ("+esc(S.f.otherType)+")":""),usd(L.oth))+rvRow("Total tax",usd(L.totalTax),true)+'</tbody></table>'+
+   h("Payments","w2")+'<table class="tbl"><tbody>'+rvRow("Federal income tax withheld",usd(L.withheld))+rvRow(L.refund>0?"Total tax refund":L.owed>0?"Total tax owed":"Refund or amount owed",usd(L.refund>0?L.refund:L.owed),true)+'</tbody></table>'+
+   actions(true,"File my return")+'</section>';
+};
+
+V.done=function(){
+  var c=calc(S.f), L=c.L, f=S.f;
+  var cls=L.owed>0?"owe":"refund";
+  var lab=L.owed>0?"You owe":(L.refund>0?"Your refund":"You’re all square");
+  var val=L.owed>0?L.owed:L.refund;
+  var msg=L.owed>0?'Your tax bill came to '+usd(L.totalTax)+', but only '+usd(L.withheld)+' was withheld from your pay. You pay the other '+usd(L.owed)+'.'
+    :L.refund>0?'Your employer already sent '+usd(L.withheld)+' to the government for you. Your real tax bill was '+usd(L.totalTax)+', so you get '+usd(L.refund)+' back.'
+    :'Your withholding matched your tax bill exactly. You get nothing back and owe nothing.';
+  return '<section class="q result noprint '+cls+'"><div class="stamp" aria-hidden="true">FILED<small>Practice return</small></div>'+
+   '<h1 style="margin-bottom:6px;font-size:clamp(22px,4vw,28px)">'+lab+'</h1><div class="big" id="bigNum" data-val="'+val+'">'+usd(0)+'</div><p class="lead">'+msg+'</p>'+
+   '<dl class="facts"><div><dt>Total tax</dt><dd>'+usd(L.totalTax)+'</dd></div><div><dt>Share of your income paid in tax</dt><dd>'+pct(L.eff)+'</dd></div><div><dt>Your top bracket</dt><dd>'+Math.round(L.top*100)+'%</dd></div><div><dt>Deduction you used</dt><dd>'+usd(L.ded)+'</dd></div></dl>'+
+   '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 6px"><button class="btn primary" type="button" data-act="print">Print or save as PDF</button><button class="btn" type="button" data-act="goto" data-to="review">Change my answers</button><button class="btn ghost" type="button" data-act="fresh">Start a new return</button></div>'+
+   '<p class="hint" id="printHint" hidden>If nothing opened, open this page in its own browser tab and press Ctrl+P (Command+P on a Mac).</p>'+
+   '<h2 style="margin-top:22px;font-size:24px">Your completed return</h2>'+
+   '<div class="tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-act="tab" data-n="0">Form 1040-S</button><button type="button" role="tab" aria-selected="false" data-act="tab" data-n="1">Schedule A-S</button><button type="button" role="tab" aria-selected="false" data-act="tab" data-n="2">Tax bracket worksheet</button></div>'+
+   '<div style="height:0"></div></section>'+
+   '<div class="sheet-scroll">'+paper1(c,f)+paper2(c,f)+paper3(c,f)+'</div>';
+};
+
+/* =====================  PAPER (the finished return)  ===================== */
+function ln(num,lead,rest,val,o){
+  o=o||{};
+  return '<div class="ln"><div class="d"><span class="t"><b>'+lead+'</b> '+(rest||"")+(o.extra||"")+'</span><i class="dots"></i></div><div class="n">'+num+'</div><div class="a">'+(o.nodol?'':'<span class="dol">$</span>')+'<span class="v">'+val+'</span></div></div>';
+}
+function sec(label,rows){return '<div class="sec"><div class="tabv">'+label+'</div><div>'+rows+'</div></div>'}
+function cb(on){return '<span class="cb'+(on?' on':'')+'"></span>'}
+function fhead(big,small,title,sub,kind){
+  return '<div class="fh"><div class="fl"><small>'+kind+'</small><b>'+big+'</b><small>'+small+'</small></div><div class="fc"><h2>'+title+'</h2><p>'+sub+'</p><p class="it">For classroom use only. This is practice paper, not a real IRS form.</p></div><div class="fr"><small>Tax Year</small><b>2025</b><small>Student Edition</small></div></div>';
+}
+function foot(){return '<div class="sf"><span>Form 1040-S (Student Edition) 2025</span><span>Classroom use only</span></div>'}
+
+function paper1(c,f){
+  var L=c.L, s=f.status;
+  var rows1=
+   ln(1,"W-2 income.","Wages or salary from your profession (W-2, box 1)",fm(L.w2))+
+   ln(2,"Other income.","Tips, side jobs, bonuses, interest, etc.",fm(L.other))+
+   ln(3,"Dividends.","Money a company pays you for owning its stock",fm(L.div))+
+   ln(4,"Capital gain or (loss).","Profit or loss from selling stocks or other investments. Enter a loss as a negative number, like -500. You can only subtract up to $3,000 of loss.",fm(L.cap))+
+   ln(5,"Total income.","Add lines 1 through 4",fm(L.total))+
+   ln(6,"Adjustments to income.","Only if your teacher gives you some; otherwise enter 0",fm(L.adj))+
+   ln(7,"Adjusted gross income (AGI).","Subtract line 6 from line 5",fm(L.agi));
+  var rows2=
+   ln(8,"Standard deduction.","Find yours in the chart on Schedule A-S",fm(L.std))+
+   ln(9,"Itemized deductions.","From Schedule A-S, line 14",fm(L.item))+
+   ln(10,"Deduction you are using.","Enter the larger of line 8 or line 9",fm(L.ded),{extra:'<div class="cbs"><label>'+cb(L.choice==="standard")+' I used the Standard deduction</label><label>'+cb(L.choice==="itemized")+' I used Itemized deductions</label></div>'})+
+   ln(11,"Taxable income.","Subtract line 10 from line 7. If less than 0, enter 0",fm(L.taxable));
+  var rows3=
+   ln(12,"Tax.","Use the Tax Bracket Worksheet",fm(L.tax))+
+   ln(13,"Child Tax Credit.","Number of qualifying children (above) &times; $2,200",fm(L.ctc))+
+   ln(14,"Education credit.","College or training costs (amount from your teacher)",fm(L.edu))+
+   ln(15,"Child and dependent care credit.","Childcare costs (amount from teacher)",fm(L.care))+
+   ln(16,"Other credit.","(from your teacher) Type of credit: <span class=\"pen\">"+esc(f.otherType)+"</span>",fm(L.oth))+
+   ln(17,"Total credits.","Add lines 13 through 16",fm(L.credits))+
+   ln(18,"Total tax.","Subtract line 17 from line 12. If less than 0, enter 0",fm(L.totalTax));
+  var rows4=
+   ln(19,"Federal income tax withheld.","From your W-2, box 2",fm(L.withheld))+
+   ln(20,"Total tax refund.","If line 19 is MORE than line 18, subtract line 18 from line 19. This is your refund.",fm(L.refund))+
+   ln(21,"Total tax owed.","If line 18 is MORE than line 19, subtract line 19 from line 18. This is the amount you owe.",fm(L.owed));
+  return '<div class="sheet show" data-sheet="0" id="sheet0">'+
+   fhead("1040-S","Student Edition","U.S. Individual Income Tax Return","Student Version &bull; Single, Married Filing Jointly, or Head of Household","Form")+
+   '<div class="cells">'+
+    '<div class="c s6"><small>Student name (first and last)</small><span class="pen">'+esc(f.name)+'</span></div>'+
+    '<div class="c s4"><small>School</small><span class="pen">'+esc(f.school)+'</span></div>'+
+    '<div class="c s2"><small>Class period</small><span class="pen">'+esc(f.period)+'</span></div>'+
+    '<div class="c s6"><small>Profession you chose</small><span class="pen">'+esc(f.profession)+'</span></div>'+
+    '<div class="c s6"><small>Filing status (check one)</small><div class="cbs"><label>'+cb(s==="single")+' Single</label><label>'+cb(s==="mfj")+' Married filing jointly</label><label>'+cb(s==="hoh")+' Head of household</label></div></div>'+
+    '<div class="c s6"><small>Qualifying children under age 17 (number)</small><span class="pen">'+L.kids+'</span></div>'+
+    '<div class="c s6 note">Only write your name, school, and class period on this form. Please do not write an address, phone number, or ID number.</div>'+
+   '</div>'+
+   sec("Income",rows1)+sec("Deductions",rows2)+sec("Tax and Credits",rows3)+sec("Payments &amp; Refund",rows4)+
+   '<div class="sig"><div class="tabv">Sign Here</div><div class="c">Student signature</div><div class="c">Date</div><div class="c">Teacher initials</div></div>'+
+   foot()+'</div>';
+}
+
+function paper2(c,f){
+  var L=c.L, A=c.A;
+  var s1=ln(1,"Medical and dental expenses.","Doctor, dentist, glasses, prescriptions you paid for",fm(A.med))+
+   ln(2,"Your AGI.","Copy from Form 1040-S, line 7",fm(A.agi))+
+   ln(3,"Multiply line 2 by 0.075","(7.5%). Only costs above this amount count",fm(A.floor))+
+   ln(4,"Allowed medical expenses.","Subtract line 3 from line 1. If less than 0, enter 0",fm(A.medOk));
+  var s2=ln(5,"State and local income taxes","(or sales taxes) you paid",fm(A.sit))+
+   ln(6,"Real estate taxes.","Property tax on a home you own",fm(A.ret))+
+   ln(7,"Personal property taxes.","For example, a yearly car tax based on the car’s value",fm(A.ppt))+
+   ln(8,"Add lines 5, 6, and 7","",fm(A.taxSum))+
+   ln(9,"Taxes you can deduct.","Enter the smaller of line 8 or $40,000. (If your income is over $500,000, ask your teacher.)",fm(A.taxOk));
+  var s3=ln(10,"Home mortgage interest.","Interest paid on a loan used to buy your home",fm(A.mort));
+  var s4=ln(11,"Gifts by cash or check.","Money you donated to charities",fm(A.chCash))+
+   ln(12,"Gifts other than cash.","Donated clothes, furniture, toys, etc.",fm(A.chNon))+
+   ln(13,"Total gifts to charity.","Add lines 11 and 12",fm(A.chTot));
+  var s5=ln(14,"Total itemized deductions.","Add lines 4, 9, 10, and 13. Enter here and on Form 1040-S, line 9.",fm(A.total));
+  return '<div class="sheet" data-sheet="1" id="sheet1">'+
+   fhead("A-S","Attach to Form 1040-S","Itemized Deductions","Should you itemize or take the standard deduction? Fill this out to find out.","Schedule")+
+   '<div class="cells"><div class="c s7"><small>Student name</small><span class="pen">'+esc(f.name)+'</span></div><div class="c s5"><small>Class period</small><span class="pen">'+esc(f.period)+'</span></div></div>'+
+   sec("Medical &amp; Dental",s1)+sec("Taxes You Paid",s2)+sec("Interest",s3)+sec("Gifts to Charity",s4)+sec("Total",s5)+
+   '<div class="box"><div class="bh">Standard or Itemized? Which one should you use?</div><div class="bb">'+
+   '<b>2025 Standard Deduction Chart</b><div class="chart3"><div>Single<b>$15,750</b></div><div>Married filing jointly<b>$31,500</b></div><div>Head of household<b>$23,625</b></div></div>'+
+   '<div class="rstep"><span class="lab"><b>A.</b> Your standard deduction (from the chart, based on your filing status)</span><span class="a"><span>$</span><span class="v">'+fm(L.std)+'</span></span></div>'+
+   '<div class="rstep"><span class="lab"><b>B.</b> Your total itemized deductions (line 14 above)</span><span class="a"><span>$</span><span class="v">'+fm(L.item)+'</span></span></div>'+
+   '<div class="rstep"><span class="lab"><b>C.</b> Which number is larger? Check one:</span><span class="cbs"><label>'+cb(L.choice==="standard")+' A (Standard)</label><label>'+cb(L.choice==="itemized")+' B (Itemized)</label></span></div>'+
+   '<p class="p-intro"><b>Choose the larger number.</b> A bigger deduction shrinks your taxable income, which lowers your tax. Write A on Form 1040-S line 8, B on line 9, and the larger one on line 10.</p>'+
+   '<div class="rstep" style="display:block"><b>D.</b> In one or two sentences, explain why this was the better choice for you:<div class="reason pen">'+esc(f.reason)+'</div></div>'+
+   '</div></div>'+foot()+'</div>';
+}
+
+function paper3(c,f){
+  var L=c.L, W=c.W, key=f.status;
+  var names=["single","mfj","hoh"], titles=["Single","Married filing jointly","Head of household"];
+  var thead='<thead><tr><th rowspan="2">Rate</th><th colspan="2">Single</th><th colspan="2" class="sepl">Married filing jointly</th><th colspan="2" class="sepl">Head of household</th></tr><tr>';
+  for(var j=0;j<3;j++) thead+='<th class="'+(j?'sepl':'')+'">Income over</th><th>Base tax</th>';
+  thead+='</tr></thead>';
+  var body='<tbody>';
+  for(var i=0;i<7;i++){
+    body+='<tr><td'+(W.idx===i?' class="hl"':'')+'><b>'+Math.round(RATES[i]*100)+'%</b></td>';
+    for(var k=0;k<3;k++){
+      var r=STATUS[names[k]].rows[i], hl=(names[k]===key&&W.idx===i);
+      body+='<td class="'+(k?'sepl ':'')+(hl?'hl':'')+'">$'+r.over.toLocaleString("en-US")+'</td><td class="'+(hl?'hl':'')+'">$'+d2(r.base)+'</td>';
+    }
+    body+='</tr>';
+  }
+  body+='</tbody>';
+  var rows=
+   ln("A","Taxable income.","Copy from Form 1040-S, line 11",fm(W.A))+
+   ln("B","Income over.","From your row in the chart",fm(W.B))+
+   ln("C","Income taxed at your top rate.","Subtract line B from line A",fm(W.C))+
+   ln("D","Tax rate.","From your row, as a decimal (22% = 0.22)",W.D.toFixed(2),{nodol:true})+
+   ln("E","Multiply line C by line D","",fm(W.E))+
+   ln("F","Base tax.","From your row in the chart",fm(W.F))+
+   ln("G","Your tax.","Add lines E and F. Enter on Form 1040-S, line 12",fm(W.G));
+  return '<div class="sheet" data-sheet="2" id="sheet2">'+
+   fhead("TBW","Tax Bracket Worksheet","Tax Bracket Worksheet","Use this to find your tax for Form 1040-S, line 12.","Worksheet")+
+   '<div class="cells"><div class="c s7"><small>Student name</small><span class="pen">'+esc(f.name)+'</span></div><div class="c s5"><small>Class period</small><span class="pen">'+esc(f.period)+'</span></div></div>'+
+   '<p class="p-intro"><b>How to use this chart:</b> Find the column for your filing status. Look down the “Income over” numbers and find the <b>last row</b> where your taxable income is bigger than the number. That is your row (shaded below). The “Base tax” already adds up the tax on all of your income in the lower brackets, so you only do math on the part of your income in your top bracket.</p>'+
+   '<table class="bt">'+thead+body+'</table>'+
+   sec("Your Tax",rows)+foot()+'</div>';
+}
+
+/* =====================  RENDERING  ===================== */
+var LIVE={};
+var main=$("#main");
+var L_status,L_invest,L_adjust,L_itemize,L_compare,L_credits;
+function liveFor(id){
+  var m={status:L_status,invest:L_invest,adjust:L_adjust,itemize:L_itemize,compare:L_compare,credits:L_credits};
+  if(m[id]) m[id]();
+}
+function render(){
+  main.innerHTML=V[S.screen]();
+  var i=sIdx(S.screen);
+  if(i>S.max) S.max=i;
+  updateChrome();
+  liveFor(S.screen);
+  if(S.screen==="done") startCount();
+  window.scrollTo(0,0);
+  var h=$("h1",main); if(h){h.setAttribute("tabindex","-1"); try{h.focus({preventScroll:true})}catch(e){}}
+  save();
+}
+function updateMeter(){
+  var c=calc(S.f).L, m=$("#meter");
+  var show=S.screen!=="welcome";
+  m.hidden=!show; if(!show) return;
+  var owe=c.owed>0;
+  m.className="meter"+(owe?" owe":"");
+  $("#ml").textContent=owe?"Tax owed so far":"Refund so far";
+  $("#mv").textContent=usd(owe?c.owed:c.refund);
+}
+function updateChrome(){
+  updateMeter();
+  var i=sIdx(S.screen), cur=SCREENS[i].stage;
+  var rail=$("#rail"), prog=$("#prog");
+  if(S.screen==="welcome"){rail.innerHTML="";prog.hidden=true;return}
+  var items=STAGES.map(function(nm,k){
+    var first=0; for(var q=0;q<SCREENS.length;q++){ if(SCREENS[q].stage===k){first=q;break} }
+    var done=k<cur||S.screen==="done"; var reach=first<=S.max&&S.screen!=="done";
+    return '<li class="'+(k===cur?'cur':'')+(done?' done':'')+'"><button type="button" '+(reach?'':'disabled ')+'data-act="goto" data-to="'+SCREENS[first].id+'"'+(k===cur?' aria-current="step"':'')+'><span class="dot">'+(done?'<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 9.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>':(k+1))+'</span>'+nm+'</button></li>';
+  }).join("");
+  rail.innerHTML='<ol>'+items+'</ol>';
+  var total=SCREENS.length-2; var pc=Math.min(100,Math.round((i-1)/total*100));
+  prog.hidden=false;
+  prog.innerHTML='<div class="pt"><span>Step '+(cur+1)+' of 5: '+STAGES[cur]+'</span><span>'+pc+'%</span></div><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pc+'"><i style="width:'+pc+'%"></i></div>';
+}
+function startCount(){
+  var el=$("#bigNum"); if(!el) return;
+  var target=parseFloat(el.getAttribute("data-val"))||0;
+  if(RM||target===0){el.textContent=usd(target);return}
+  var t0=null, dur=1000;
+  function step(ts){ if(!t0) t0=ts; var p=Math.min(1,(ts-t0)/dur); var e=1-Math.pow(1-p,3); el.textContent=usd(target*e); if(p<1) requestAnimationFrame(step); else el.textContent=usd(target); }
+  requestAnimationFrame(step);
+}
+
+/* =====================  VALIDATION & NAVIGATION  ===================== */
+function validate(id){
+  var e={}, f=S.f;
+  if(id==="you"){
+    if(!f.name.trim()) e.name="Enter your name.";
+    if(!f.school.trim()) e.school="Enter your school.";
+    if(!f.period.trim()) e.period="Enter your class period.";
+    if(!f.profession.trim()) e.profession="Enter the profession you chose.";
+  }
+  if(id==="w2"){
+    if(!String(f.w2).trim()||num(f.w2)<=0) e.w2="Enter your yearly wages from Box 1. It needs to be more than $0.";
+  }
+  if(id==="compare"){
+    if(!f.choice) e.choice="Pick standard or itemized to continue.";
+  }
+  return e;
+}
+function showErrors(e){
+  $$(".err",main).forEach(function(p){p.textContent=""});
+  $$("[aria-invalid]",main).forEach(function(x){x.removeAttribute("aria-invalid")});
+  var first=null;
+  Object.keys(e).forEach(function(k){
+    var p=$("#f_"+k+"_e"); if(p) p.textContent=e[k];
+    var inp=$("#f_"+k); if(inp){inp.setAttribute("aria-invalid","true"); if(!first) first=inp}
+    if(k==="choice"&&!first) first=$('input[name="choice"]',main);
+  });
+  if(first) first.focus();
+}
+function go(id){S.screen=id;render()}
+function next(){
+  var e=validate(S.screen); if(Object.keys(e).length){showErrors(e);return}
+  var i=sIdx(S.screen); if(i<SCREENS.length-1) go(SCREENS[i+1].id);
+}
+function back(){var i=sIdx(S.screen); if(i>0) go(SCREENS[i-1].id)}
+function fmtMoneyInput(el){
+  var raw=el.value.trim(); if(!raw){S.f[el.dataset.k]="";return}
+  var v=num(raw); var s=v.toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:2});
+  el.value=s; S.f[el.dataset.k]=s;
+}
+
+/* =====================  EVENTS  ===================== */
+main.addEventListener("input",function(ev){
+  var t=ev.target; if(!t.dataset||!t.dataset.k||t.type==="radio") return;
+  S.f[t.dataset.k]=t.value; save(); updateMeter(); liveFor(S.screen);
+  var p=$("#f_"+t.dataset.k+"_e"); if(p&&p.textContent){p.textContent="";t.removeAttribute("aria-invalid")}
+});
+main.addEventListener("change",function(ev){
+  var t=ev.target; if(!t.dataset||!t.dataset.k) return;
+  if(t.type==="radio"){
+    S.f[t.dataset.k]=t.value; save(); updateMeter(); liveFor(S.screen);
+    if(t.dataset.k==="choice"){var p=$("#f_choice_e");if(p)p.textContent=""}
+    if(t.dataset.k==="status") liveFor("status");
+  }
+});
+main.addEventListener("focusout",function(ev){
+  var t=ev.target; if(t&&t.dataset&&t.dataset.money){fmtMoneyInput(t);save();updateMeter();liveFor(S.screen)}
+});
+main.addEventListener("keydown",function(ev){
+  if(ev.key==="Enter"&&ev.target.tagName==="INPUT"&&ev.target.type!=="radio"){
+    ev.preventDefault(); if(ev.target.dataset.money) fmtMoneyInput(ev.target);
+    var b=$("#nextBtn"); if(b) b.click();
+  }
+});
+function onAct(ev){
+  var b=ev.target.closest("[data-act]"); if(!b) return;
+  var a=b.getAttribute("data-act");
+  if(a==="start"){go("you")}
+  else if(a==="resume"){S=saved; saved=null; var i=sIdx(S.screen); if(S.screen==="welcome") S.screen="you"; render()}
+  else if(a==="fresh"){ try{localStorage.removeItem(KEY)}catch(e){} saved=null; S={screen:"you",max:0,f:defaults()}; render() }
+  else if(a==="next"){next()}
+  else if(a==="back"){back()}
+  else if(a==="goto"){go(b.getAttribute("data-to"))}
+  else if(a==="kids-"){S.f.kids=Math.max(0,S.f.kids-1); $("#kidsN").textContent=S.f.kids; save(); updateMeter(); liveFor("status")}
+  else if(a==="kids+"){S.f.kids=Math.min(10,S.f.kids+1); $("#kidsN").textContent=S.f.kids; save(); updateMeter(); liveFor("status")}
+  else if(a==="estimate"){var w=num(S.f.w2); var el=$("#f_withheld"); if(w>0){var v=Math.round(w*0.14); var s=v.toLocaleString("en-US"); S.f.withheld=s; el.value=s; save(); updateMeter()} else {var p=$("#f_w2_e"); $("#f_w2").focus(); if(p) p.textContent="Enter your wages first, then we can estimate."}}
+  else if(a==="tab"){
+    var n=b.getAttribute("data-n");
+    $$(".tabs button").forEach(function(x){x.setAttribute("aria-selected",x===b?"true":"false")});
+    $$(".sheet").forEach(function(s){s.classList.toggle("show",s.getAttribute("data-sheet")===n)});
+  }
+  else if(a==="print"){
+    try{window.print()}catch(e){ var h=$("#printHint"); if(h) h.hidden=false }
+    setTimeout(function(){var h=$("#printHint"); if(h) h.hidden=false},700);
+  }
+}
+main.addEventListener("click",onAct);
+$("#rail").addEventListener("click",onAct);
+
+var resetArmed=false, resetTimer=null;
+$("#reset").addEventListener("click",function(){
+  var b=this;
+  if(!resetArmed){resetArmed=true;b.textContent="Click again to erase everything";clearTimeout(resetTimer);resetTimer=setTimeout(function(){resetArmed=false;b.textContent="Start over"},4000);return}
+  resetArmed=false; b.textContent="Start over";
+  try{localStorage.removeItem(KEY)}catch(e){}
+  saved=null; S={screen:"welcome",max:0,f:defaults()}; render();
+});
+
+/* =====================  GO  ===================== */
+render();
+})();
+</script>
+</body>
+</html>
